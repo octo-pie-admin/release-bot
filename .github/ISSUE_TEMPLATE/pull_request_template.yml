@@ -1,0 +1,50 @@
+name: "🔀 Pull Request"
+description: "Submit a contribution to OctoPieReleaseBot"
+title: "[PR]: "
+labels: ["needs-review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for contributing to 🐙🥧 OctoPieReleaseBot!
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A clear description of what this PR changes or adds
+      placeholder: "This PR fixes..."
+    validations:
+      required: true
+  - type: textarea
+    id: related
+    attributes:
+      label: Related Issues
+      description: Link related issues
+      placeholder: "Closes #123"
+  - type: checkboxes
+    id: changes
+    attributes:
+      label: Type of Change
+      options:
+        - label: Bug fix
+        - label: New feature
+        - label: Documentation update
+        - label: Other (describe below)
+  - type: textarea
+    id: testing
+    attributes:
+      label: How to Test
+      description: Steps for reviewers to test this PR
+      placeholder: |
+        1. Run `python main.py --release_tag v1.2.3`
+        2. Check generated blog post
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: Tests added/updated
+        - label: Documentation updated
+        - label: Linting/formatting passes
+        - label: CI pipeline passes
+        - label: Ready for review 🚀

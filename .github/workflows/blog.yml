@@ -1,0 +1,30 @@
+name: Octo-Pie-Release-Bot
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    env:
+      # use secrets.* when running locally
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN || 'test-token' }}
+      GITHUB_REPOSITORY: ${{ github.repository || 'example-org/example-repo' }}
+      ACT: ${{ secrets.ACT || 'false' }}  # set to 'true' when testing with act
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Octo-Pie-Release-Bot
+        uses: ./  # local action
+        id: AI-Release-Bot
+        with:
+            github_token: ${{ secrets.GITHUB_TOKEN }}
+            llm_model: ${{ secrets.LLM_MODEL }}
+            llm_url: ${{ secrets.LLM_URL }}
+            openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+            release_tag: ${{ github.event.release.tag_name || 'latest' }}
+            openapi_file: ./tests/openapi.json
+            act: ${{ secrets.ACT || 'false' }}

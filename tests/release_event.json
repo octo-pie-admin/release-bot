@@ -1,0 +1,35 @@
+{
+  "release": {
+    "tag_name": "v1.2.0",
+    "name": "Octo-Pie API v1.2.0",
+    "body": "This release introduces authentication endpoints, comment support, and several improvements to blog post APIs."
+  },
+  "prs": [
+    {
+      "title": "feat(api): add login endpoint for authentication",
+      "body": "Introduces `/auth/login` endpoint for user authentication with username/password. Returns JWT on success."
+    },
+    {
+      "title": "feat(api): add support for comments",
+      "body": "Introduces `/comments` endpoint to allow posting comments tied to blog posts."
+    },
+    {
+      "title": "fix(api): improve error handling for post fetch",
+      "body": "Now returns proper `404` instead of `500` when a post is not found."
+    },
+    {
+      "title": "docs: add OpenAPI examples for new endpoints",
+      "body": "Enhanced the OpenAPI spec with request/response examples for `/auth/login` and `/comments`."
+    }
+  ],
+  "issues": [
+    {
+      "title": "Login endpoint needed",
+      "body": "Users need to authenticate via username/password."
+    },
+    {
+      "title": "Better error codes for posts API",
+      "body": "Fetching a non-existent post should return 404 instead of 500."
+    }
+  ]
+}

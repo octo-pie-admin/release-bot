@@ -1,0 +1,129 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Octo-Pie API",
+    "version": "1.2.0",
+    "description": "API for managing blog posts, comments, and users"
+  },
+  "paths": {
+    "/posts": {
+      "get": {
+        "summary": "List blog posts",
+        "responses": {
+          "200": {
+            "description": "A list of blog posts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Post" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new blog post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PostCreate" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Post created" }
+        }
+      }
+    },
+    "/posts/{id}": {
+      "get": {
+        "summary": "Get a single blog post",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Blog post details" },
+          "404": { "description": "Post not found" }
+        }
+      }
+    },
+    "/comments": {
+      "post": {
+        "summary": "Add a comment to a post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CommentCreate" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Comment added" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "User login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login successful" },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Post": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "content": { "type": "string" },
+          "author": { "type": "string" }
+        }
+      },
+      "PostCreate": {
+        "type": "object",
+        "required": ["title", "content"],
+        "properties": {
+          "title": { "type": "string" },
+          "content": { "type": "string" }
+        }
+      },
+      "CommentCreate": {
+        "type": "object",
+        "required": ["postId", "content"],
+        "properties": {
+          "postId": { "type": "string" },
+          "content": { "type": "string" }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["username", "password"],
+        "properties": {
+          "username": { "type": "string" },
+          "password": { "type": "string" }
+        }
+      }
+    }
+  }
+}
