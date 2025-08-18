@@ -68,7 +68,7 @@ def fetch_release_context_act(event_file: str, openapi_file: str) -> ReleaseCont
     issue_summaries = ["Issue summary example"]
 
     openapi_diff = None
-    if Path(openapi_file).exists():
+    if openapi_file and Path(openapi_file).exists():
         with open(openapi_file, "r") as f:
             openapi_diff = f.read()
 
