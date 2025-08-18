@@ -45,8 +45,10 @@ jobs:
         uses: your-org/release-bot@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+
           release_tag: ${{ github.event.release.tag_name }}
           openapi_file: "./openapi.yaml"
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
           llm_model: "gpt-4o-mini"
 
       - name: Save generated blog post
@@ -57,6 +59,7 @@ jobs:
 ## 🛠 Inputs
 * Name	Required	Default	Description
 * github_token	✅	—	GitHub token with repo scope
+* openai_api_key ✅ — OpenAI Api Key
 * release_tag	❌	latest release	Release tag to summarize
 * openapi_file	❌	./openapi.yaml	Path to OpenAPI file
 * llm_model	❌	gpt-4o-mini	LLM model to use via LangChain

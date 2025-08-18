@@ -53,6 +53,7 @@ runs:
         RELEASE_TAG: ${{ inputs.release_tag }}
         OPENAPI_FILE: ${{ inputs.openapi_file }}
         LLM_MODEL: ${{ inputs.llm_model }}
+        OPENAI_API_KEY: ${{ inputs.openai_api_key }}
         GITHUB_REPOSITORY: ${{ github.repository }}
         GITHUB_OUTPUT: ${{ github.output }}
       run: |
