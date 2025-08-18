@@ -1,0 +1,59 @@
+name: "Octo-Pie-Release-Bot"
+description: "Generate a markdown post on each release. Automate topline funnel, let the devs focus on engineering"
+author: "Octo-Pie"
+branding:
+  icon: "book-open"
+  color: "purple"
+
+inputs:
+  github_token:
+    description: "GitHub token with repo scope"
+    required: true
+  release_tag:
+    description: "Release tag to summarize (defaults to latest release)"
+    required: false
+    default: ""
+  openapi_file:
+    description: "Path to OpenAPI file"
+    required: false
+  llm_model:
+    description: "LLM model to use via LangChain (e.g., gpt-4o-mini)"
+    required: false
+    default: "gpt-4.1-mini"
+  openai_api_key:
+    description: "OpenAI api key"
+    required: true
+    default: ""
+
+outputs:
+  blog_post:
+    description: "Generated markdown blog post"
+  status:
+    description: "Pipeline status (success or error)"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r ${{ github.action_path }}/requirements.txt
+
+    - name: Run Octo-Pie-Release-Bot
+      id: run
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        RELEASE_TAG: ${{ inputs.release_tag }}
+        OPENAPI_FILE: ${{ inputs.openapi_file }}
+        LLM_MODEL: ${{ inputs.llm_model }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_OUTPUT: ${{ github.output }}
+      run: |
+        python ${{ github.action_path }}/main.py
