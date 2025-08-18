@@ -152,7 +152,7 @@ def generate_blog_post(
 ) -> BlogPostOutput:
 
     llm = (
-        ChatOpenAI(model=llm_model, api_key=SecretStr(api_key))
+        ChatOpenAI(model=llm_model)
         if not act_mode
         else ChatOllama(
             model=llm_model,
