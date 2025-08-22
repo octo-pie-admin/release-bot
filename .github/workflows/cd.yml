@@ -42,6 +42,8 @@ jobs:
 
           git checkout gh-pages || git checkout -b gh-pages
 
+          git pull
+
           # Move generated file into branch
           git add docs/
           git commit -m "Add release notes for ${{ github.event.release.tag_name }}" || echo "No changes to commit"
