@@ -1,6 +1,6 @@
 lsi: false
 safe: true
-source: github-action-consumer-test/
+source: octo-pie-release-bot
 incremental: false
 highlighter: rouge
 gist:
