@@ -1,35 +1,46 @@
 {
+  "action": "published",
   "release": {
-    "tag_name": "v1.2.0",
-    "name": "Octo-Pie API v1.2.0",
-    "body": "This release introduces authentication endpoints, comment support, and several improvements to blog post APIs."
+    "tag_name": "v2.3.0",
+    "name": "Octo-Pie API v2.3.0 Released: Enhanced Auth & Comments",
+    "body": "This release introduces new authentication endpoints, improves error handling, and adds support for comments on posts.",
+    "draft": false,
+    "prerelease": false,
+    "html_url": "https://github.com/example-org/example-repo/releases/tag/v2.3.0",
+    "created_at": "2025-08-21T12:00:00Z",
+    "published_at": "2025-08-21T12:15:00Z"
   },
-  "prs": [
+  "repository": {
+    "id": 123456,
+    "full_name": "example-org/example-repo",
+    "html_url": "https://github.com/example-org/example-repo",
+    "private": false
+  },
+  "pull_requests": [
     {
-      "title": "feat(api): add login endpoint for authentication",
-      "body": "Introduces `/auth/login` endpoint for user authentication with username/password. Returns JWT on success."
+      "title": "Add OAuth2 login endpoint",
+      "body": "Implemented OAuth2 login flow with JWT tokens for authentication.",
+      "merged_at": "2025-08-20T10:30:00Z"
     },
     {
-      "title": "feat(api): add support for comments",
-      "body": "Introduces `/comments` endpoint to allow posting comments tied to blog posts."
+      "title": "Improve error handling for /posts",
+      "body": "Refactored error codes to return 404 instead of 500 for missing posts.",
+      "merged_at": "2025-08-20T12:00:00Z"
     },
     {
-      "title": "fix(api): improve error handling for post fetch",
-      "body": "Now returns proper `404` instead of `500` when a post is not found."
-    },
-    {
-      "title": "docs: add OpenAPI examples for new endpoints",
-      "body": "Enhanced the OpenAPI spec with request/response examples for `/auth/login` and `/comments`."
+      "title": "Add support for post comments",
+      "body": "Added GET /comments and POST /comments endpoints for posts.",
+      "merged_at": "2025-08-21T08:45:00Z"
     }
   ],
   "issues": [
     {
-      "title": "Login endpoint needed",
-      "body": "Users need to authenticate via username/password."
+      "title": "Fix authentication bug on login",
+      "body": "Resolved issue where incorrect credentials returned a 500 error instead of 401."
     },
     {
-      "title": "Better error codes for posts API",
-      "body": "Fetching a non-existent post should return 404 instead of 500."
+      "title": "Add missing validations for comments",
+      "body": "Ensure comment text is not empty and post ID exists before accepting POST /comments."
     }
   ]
 }

@@ -24,6 +24,10 @@ inputs:
     description: "OpenAI api key"
     required: true
     default: ""
+  output_format:
+    description: "Output style: markdown (default), jekyll, mkdocs"
+    required: false
+    default: "markdown"
 
 outputs:
   blog_post:
@@ -55,6 +59,20 @@ runs:
         LLM_MODEL: ${{ inputs.llm_model }}
         OPENAI_API_KEY: ${{ inputs.openai_api_key }}
         GITHUB_REPOSITORY: ${{ github.repository }}
-        GITHUB_OUTPUT: ${{ github.output }}
+        OUTPUT_FORMAT: ${{ inputs.output_format }}
       run: |
-        python ${{ github.action_path }}/main.py
+        OUTPUT=$(python ${{ github.action_path }}/main.py)
+
+        # Decode Base64 blog post
+        B64=$(printf "%s\n" "$OUTPUT" | sed -n 's/^BLOG_POST_B64:://p' | tail -n1)
+        BLOG_POST=$(printf "%s" "$B64" | base64 -d)
+
+        STATUS=$(printf "%s\n" "$OUTPUT" | sed -n 's/^STATUS:://p' | tail -n1)
+
+        # Use unquoted heredoc; escape special chars with quotes inside if needed
+        {
+          echo "blog_post<<EOF"
+          printf "%s\n" "$BLOG_POST"
+          echo "EOF"
+          echo "status=$STATUS"
+        } >> "$GITHUB_OUTPUT"

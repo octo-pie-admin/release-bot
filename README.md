@@ -63,6 +63,7 @@ jobs:
 * release_tag	❌	latest release	Release tag to summarize
 * openapi_file	❌	./openapi.yaml	Path to OpenAPI file
 * llm_model	❌	gpt-4o-mini	LLM model to use via LangChain
+* output_format	❌	markdown (default), jekyll, mkdocs
 
 ## 📤 Outputs
 Name	Description

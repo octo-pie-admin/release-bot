@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
+import base64
+from datetime import date
 import os
+import re
 import sys
 import json
 from pathlib import Path
@@ -11,6 +14,8 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 import traceback
 from pydantic import BaseModel, SecretStr
+
+from prompt import FORMAT_GUIDANCE, SYSTEM_PROMPT
 
 
 class ReleaseContext(BaseModel):
@@ -52,40 +57,66 @@ def get_inputs():
         "--openai_api_key", required=False, default=os.getenv("OPENAI_API_KEY")
     )
     parser.add_argument("--llm_url", required=False, default=os.getenv("LLM_URL"))
+    parser.add_argument(
+        "--output_format",
+        required=False,
+        default=os.getenv("OUTPUT_FORMAT", "markdown"),
+        choices=["markdown", "jekyll", "mkdocs"],
+        help="Output style: markdown (default), jekyll, mkdocs",
+    )
     return parser.parse_args()
 
 
 def fetch_release_context_act(event_file: str, openapi_file: str) -> ReleaseContext:
-    """Use event JSON values for act mode."""
+    """
+    Load release context from a local GitHub event JSON file (for act mode).
+    Safely extracts release info, repository, PRs, issues, and docs URLs.
+    """
     with open(event_file, "r") as f:
         event = json.load(f)
 
-    release = event.get("release", {})
-    repository = event.get("repository", {})
+    # Safely extract release info
+    release = event.get("release") or {}
+    release_tag = release.get("tag_name") or "v1.0.0"
+    release_body = release.get("body") or ""
+    release_name = release.get("name") or f"Release {release_tag}"
+    release_url = release.get(
+        "html_url",
+        f"https://github.com/{event.get('repository', {}).get('full_name', 'example-org/example-repo')}/releases/tag/{release_tag}",
+    )
 
-    pr_titles = ["Example PR 1", "Example PR 2"]
-    pr_descriptions = ["PR body 1", "PR body 2"]
-    issue_summaries = ["Issue summary example"]
+    # Safely extract repository info
+    repository = event.get("repository") or {}
+    repo_full_name = repository.get("full_name", "example-org/example-repo")
 
+    # Example PRs / issues (act mode doesn’t fetch real PRs)
+    pr_titles = [
+        pr.get("title", f"Example PR {i+1}")
+        for i, pr in enumerate(event.get("pull_requests", []))
+    ] or ["Example PR 1", "Example PR 2"]
+    pr_descriptions = [pr.get("body", "") for pr in event.get("pull_requests", [])] or [
+        "PR body 1",
+        "PR body 2",
+    ]
+    issue_summaries = [issue.get("body", "") for issue in event.get("issues", [])] or [
+        "Issue summary example"
+    ]
+
+    # OpenAPI diff
     openapi_diff = None
     if openapi_file and Path(openapi_file).exists():
         with open(openapi_file, "r") as f:
             openapi_diff = f.read()
 
     return ReleaseContext(
-        repo=repository.get("full_name", "example-org/example-repo"),
-        release_tag=release.get("tag_name", "v1.0.0"),
-        release_notes=release.get("body", ""),
+        repo=repo_full_name,
+        release_tag=release_tag,
+        release_notes=release_body,
         pr_titles=pr_titles,
         pr_descriptions=pr_descriptions,
         issue_summaries=issue_summaries,
         openapi_diff=openapi_diff,
-        docs_urls=[
-            release.get(
-                "html_url",
-                "https://github.com/example-org/example-repo/releases/tag/v1.0.0",
-            )
-        ],
+        docs_urls=[release_url],
     )
 
 
@@ -143,11 +174,26 @@ def safe_join(items: list[str], placeholder="N/A") -> str:
     return joined if joined.strip() else placeholder
 
 
+def enforce_jekyll_header(text: str, release_tag: str, today: str) -> str:
+    """Ensure the Jekyll YAML front matter is present."""
+    if text.lstrip().startswith("---"):
+        return text
+    header = f"""---
+layout: post
+title: "Release {release_tag} - Highlights"
+date: {today}
+categories: release
+---
+"""
+    return header + "\n" + text
+
+
 def generate_blog_post(
     context: ReleaseContext,
     llm_model: str,
     api_key: str,
     llm_url: str,
+    output_format: str = "markdown",
     act_mode: bool = False,
 ) -> BlogPostOutput:
 
@@ -160,91 +206,56 @@ def generate_blog_post(
         )
     )  # type: ignore
 
-    SYSTEM_PROMPT = """
-# Task
-You are Octo-Pie-Release-Bot, a technical writer that generates engaging blog posts for developers whenever a new release is published.  
-You are given:
-
-1. **Release metadata** (tag, name, notes)  
-2. **Pull requests** and **issues** tied to the release  
-3. **OpenAPI specification changes** for the API (`openapi.json`)  
-
-Your goal is to create a **public-facing blog post** that highlights what’s new in this release.  
-
----
-
-# Requirements
-
-- Write in a **developer-friendly but approachable tone**.  
-- Summarize the **main improvements** at the top.  
-- Highlight **new endpoints**, **changes in error codes**, and **authentication updates**.  
-- Include **example request/response snippets** in fenced Markdown code blocks (```json or ```http).  
-- Show **before vs. after** examples when relevant (e.g., new error codes).  
-- Organize with headings and subheadings.  
-
----
-
-# Output Format
-
-Produce a **Markdown-formatted blog post** with the following structure:
-
-## Title
-Use the release name (e.g. *Octo-Pie API v1.2.0 Released: Authentication & Comments*)  
-
-## Introduction
-- High-level summary of the release.  
-- What it means for developers.  
-
-## Highlights
-- Bullet-point summary of the biggest improvements.  
-
-## New Features
-- For each new endpoint in the OpenAPI spec, describe it in plain language.  
-- Include a **sample request and response** (from the schema).  
-
-## Improvements & Fixes
-- Explain error code changes or improved error handling.  
-- Show an example (e.g., `GET /posts/{{id}}` now returns `404` instead of `500`).  
-
-## Closing
-- Encourage developers to try out the new endpoints.  
-- Mention where to find docs (link to OpenAPI spec if available).
-
-
-Context:  
-Release Notes: {release_notes}  
-PR Titles: {pr_titles}  
-PR Descriptions: {pr_descriptions}  
-Issues: {issue_summaries}  
-OpenAPI: {openapi_diff}  
-Docs: {docs_urls}  
-"""
-
     prompt_template = PromptTemplate(
         template=SYSTEM_PROMPT,
         input_variables=[
+            "format_guidance",
             "release_notes",
             "pr_titles",
             "pr_descriptions",
             "issue_summaries",
             "openapi_diff",
             "docs_urls",
+            "release_tag",
+            "today",
+            "repo_url",
         ],
     )
 
     input_dict = {
+        "format_guidance": FORMAT_GUIDANCE.get(
+            output_format, FORMAT_GUIDANCE["markdown"]
+        ),
         "release_notes": ensure_nonempty(context.release_notes),
         "pr_titles": safe_join(context.pr_titles),
         "pr_descriptions": safe_join(context.pr_descriptions),
         "issue_summaries": safe_join(context.issue_summaries),
         "openapi_diff": ensure_nonempty(context.openapi_diff),
         "docs_urls": safe_join(context.docs_urls),
+        "release_tag": context.release_tag,
+        "today": date.today().isoformat(),
+        "repo_url": f"https://github.com/{context.repo}",
     }
 
     chain = prompt_template | llm
     response = chain.invoke(input_dict)
 
     blog_post = response.content.strip()
+
+    # Safety net: enforce Jekyll front matter if needed
+    if output_format == "jekyll":
+        blog_post = enforce_jekyll_header(
+            blog_post, context.release_tag, date.today().isoformat()
+        )
+
+    # Optional: fix repo links if LLM replaced release tags incorrectly
+    if output_format in ["jekyll", "mkdocs"]:
+        blog_post = re.sub(
+            r"https://github\.com/[^/]+/[^/]+/releases/tag/[^ \n]+",
+            f"https://github.com/{context.repo}/releases/tag/{context.release_tag}",
+            blog_post,
+        )
+
     return BlogPostOutput(
         blog_post=blog_post, references=context.docs_urls, status="success"
     )
@@ -272,22 +283,20 @@ def main():
             llm_model=args.llm_model,
             api_key=args.openai_api_key,
             llm_url=args.llm_url,
+            output_format=args.output_format,
             act_mode=ACT_MODE,
         )
 
-        # Print the markdown directly
-        print(output.blog_post)
-
-        # Optionally, write outputs for GitHub Actions
         cleaned_output = (
             output.blog_post
-        )  # .replace('%','%25').replace('\n','%0A').replace('\r','%0D')
-        print(f"::set-output name=blog_post::{cleaned_output}")
-        print(f"::set-output name=status::{output.status}")
+        )
+        b64 = base64.b64encode(cleaned_output.encode("utf-8")).decode("ascii")
+        print(f"BLOG_POST_B64::{b64}")
+        print(f"STATUS::{output.status}")  
 
     except Exception as e:
         traceback.print_exc()
-        print("::set-output name=status::error")
+        print("STATUS::ERROR")
         sys.exit(1)
 
 
