@@ -1,0 +1,56 @@
+name: Release Bot
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  create_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout consumer repository
+        uses: actions/checkout@v4
+
+      - name: AI-Release-Bot
+        id: run
+        uses: octo-pie-admin/release-bot@main
+        with:
+          github_token: ${{ secrets.TOKEN_GITHUB }}
+          llm_model: ${{ secrets.LLM_MODEL }}
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          release_tag: ${{ github.event.release.tag_name || 'latest' }}
+          openapi_file: ${{ secrets.OPENAPI_FILE || 'not_real' }}
+          output_format: ${{ secrets.OUTPUT_FORMAT || 'jekyll' }}
+
+      - name: Save generated blog post
+        run: |
+          mkdir -p docs/releases/
+          VERSION=${{ github.event.release.tag_name }}
+          DATE=$(date +'%Y-%m-%d')
+          FILE="docs/releases/${DATE}-release-${VERSION}.md"
+
+          echo "${{ steps.run.outputs.blog_post }}" > "$FILE"
+          echo "Saved release notes to $FILE"
+
+      - name: Commit and push to gh-pages
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout gh-pages || git checkout -b gh-pages
+
+          # Move generated file into branch
+          git add _posts/
+          git commit -m "Add release notes for ${{ github.event.release.tag_name }}" || echo "No changes to commit"
+          git push origin gh-pages
+
+      - name: Trigger Jekyll rebuild
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          event-type: jekyll-rebuild
