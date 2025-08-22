@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   create_release:
@@ -19,6 +21,7 @@ jobs:
         id: run
         uses: octo-pie-admin/release-bot@main
         with:
+          github_token: ${{ secrets.TOKEN_GITHUB }}
           llm_model: ${{ secrets.LLM_MODEL }}
           openai_api_key: ${{ secrets.OPENAI_API_KEY }}
           release_tag: ${{ github.event.release.tag_name || 'latest' }}
@@ -40,13 +43,16 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          git checkout gh-pages || git checkout -b gh-pages
+          # Make sure we have the remote gh-pages branch locally
+          git fetch origin gh-pages || true
+          git checkout gh-pages || git checkout -b gh-pages origin/gh-pages
 
-          git pull
-
-          # Move generated file into branch
-          git add docs/
+          # Add new release file(s) under docs/releases/
+          git add docs/releases/
           git commit -m "Add release notes for ${{ github.event.release.tag_name }}" || echo "No changes to commit"
+
+          # Rebase onto the latest remote branch to avoid non–fast-forward push issues
+          git pull --rebase origin gh-pages || true
           git push origin gh-pages
 
       - name: Trigger Jekyll rebuild
