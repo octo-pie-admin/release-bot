@@ -24,6 +24,10 @@ inputs:
     description: "OpenAI api key"
     required: true
     default: ""
+  output_format:
+    description: "Output style: markdown (default), jekyll, mkdocs"
+    required: false
+    default: "markdown"
 
 outputs:
   blog_post:
@@ -55,6 +59,22 @@ runs:
         LLM_MODEL: ${{ inputs.llm_model }}
         OPENAI_API_KEY: ${{ inputs.openai_api_key }}
         GITHUB_REPOSITORY: ${{ github.repository }}
-        GITHUB_OUTPUT: ${{ github.output }}
+        OUTPUT_FORMAT: ${{ inputs.output_format }}
       run: |
-        python ${{ github.action_path }}/main.py
+        OUTPUT=$(python ${{ github.action_path }}/main.py)
+
+        echo "================== Hello World ======================="
+
+        echo "$OUTPUT"
+
+        echo "================== Goodbye World ======================="
+
+        BLOG_POST=$(echo "$OUTPUT" | sed -n 's/^BLOG_POST:://p')
+        STATUS=$(echo "$OUTPUT" | sed -n 's/^STATUS:://p')
+
+        {
+          echo "blog_post<<EOF"
+          echo "$BLOG_POST"
+          echo "EOF"
+          echo "status=$STATUS"
+        } >> "$GITHUB_OUTPUT"
