@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import base64
 from datetime import date
 import os
 import re
@@ -286,11 +287,11 @@ def main():
             act_mode=ACT_MODE,
         )
 
-        # Optionally, write outputs for GitHub Actions
         cleaned_output = (
             output.blog_post
         )
-        print(f"BLOG_POST::{cleaned_output}")
+        b64 = base64.b64encode(cleaned_output.encode("utf-8")).decode("ascii")
+        print(f"BLOG_POST_B64::{b64}")
         print(f"STATUS::{output.status}")  
 
     except Exception as e:

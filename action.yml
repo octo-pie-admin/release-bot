@@ -63,18 +63,14 @@ runs:
       run: |
         OUTPUT=$(python ${{ github.action_path }}/main.py)
 
-        echo "================== Hello World ======================="
+        B64=$(printf "%s\n" "$OUTPUT" | sed -n 's/^BLOG_POST_B64:://p' | tail -n1)
+        BLOG_POST=$(printf "%s" "$B64" | base64 -d)
 
-        echo "$OUTPUT"
-
-        echo "================== Goodbye World ======================="
-
-        BLOG_POST=$(echo "$OUTPUT" | sed -n 's/^BLOG_POST:://p')
-        STATUS=$(echo "$OUTPUT" | sed -n 's/^STATUS:://p')
+        STATUS=$(printf "%s\n" "$OUTPUT" | sed -n 's/^STATUS:://p' | tail -n1)
 
         {
-          echo "blog_post<<EOF"
-          echo "$BLOG_POST"
+          echo "blog_post<<'EOF'"
+          printf "%s\n" "$BLOG_POST"
           echo "EOF"
           echo "status=$STATUS"
         } >> "$GITHUB_OUTPUT"
