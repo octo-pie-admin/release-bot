@@ -1,0 +1,7 @@
+lsi: false
+safe: true
+source: github-action-consumer-test/
+incremental: false
+highlighter: rouge
+gist:
+  noscript: false
