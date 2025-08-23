@@ -61,15 +61,15 @@ runs:
         GITHUB_REPOSITORY: ${{ github.repository }}
         OUTPUT_FORMAT: ${{ inputs.output_format }}
       run: |
-        OUTPUT=$(python ${{ github.action_path }}/main.py)
+        OUTPUT=$(python ${{ github.action_path }}/main.py 2>&1)
+        echo "RAW OUTPUT:"
+        echo "$OUTPUT"
 
-        # Decode Base64 blog post
         B64=$(printf "%s\n" "$OUTPUT" | sed -n 's/^BLOG_POST_B64:://p' | tail -n1)
-        BLOG_POST=$(printf "%s" "$B64" | base64 -d)
+        BLOG_POST=$(printf "%s" "$B64" | base64 -d || true)
 
         STATUS=$(printf "%s\n" "$OUTPUT" | sed -n 's/^STATUS:://p' | tail -n1)
 
-        # Use unquoted heredoc; escape special chars with quotes inside if needed
         {
           echo "blog_post<<EOF"
           printf "%s\n" "$BLOG_POST"
