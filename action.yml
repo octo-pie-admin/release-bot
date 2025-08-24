@@ -68,6 +68,7 @@ runs:
         B64=$(printf "%s\n" "$OUTPUT" | sed -n 's/^BLOG_POST_B64:://p' | tail -n1)
         BLOG_POST=$(printf "%s" "$B64" | base64 -d || true)
 
-        echo "++++ Debug Output v2 ++++"
+        echo "++++ Debug Output v3 ++++"
 
-        echo "blog_post<<EOF"$'\n'"$BLOG_POST"$'\n'EOF >> "$GITHUB_OUTPUT".
+        EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+        echo "blog_post<<EOF"$'\n'"$BLOG_POST"$'\n'EOF >> $GITHUB_OUTPUT
