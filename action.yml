@@ -60,14 +60,14 @@ runs:
         GITHUB_REPOSITORY: ${{ github.repository }}
         OUTPUT_FORMAT: ${{ inputs.output_format }}
       run: |
-        OUTPUT=$(python ${{ github.action_path }}/main.py 2>&1)
-        echo "RAW OUTPUT:"
-        echo "$OUTPUT"
+        B64=$(python "${{ github.action_path }}/main.py" | sed -n 's/^BLOG_POST_B64:://p' | tail -n1)
 
-        B64=$(printf "%s\n" "$OUTPUT" | sed -n 's/^BLOG_POST_B64:://p' | tail -n1)
-        BLOG_POST=$(printf "%s" "$B64" | base64 -d || true)
+        echo "++++ Debug Output v5 ++++"
 
-        echo "++++ Debug Output v4 ++++"
-
-        EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-        echo "blog_post<<EOF"$'\n'"$B64"$'\n'EOF >> $GITHUB_OUTPUT
+        DELIM=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+        {
+          echo "blog_post<<$DELIM"
+          printf "%s" "$B64"
+          echo
+          echo "$DELIM"
+        } >> "$GITHUB_OUTPUT"
