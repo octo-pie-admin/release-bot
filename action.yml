@@ -68,11 +68,8 @@ runs:
         B64=$(printf "%s\n" "$OUTPUT" | sed -n 's/^BLOG_POST_B64:://p' | tail -n1)
         BLOG_POST=$(printf "%s" "$B64" | base64 -d || true)
 
-        STATUS=$(printf "%s\n" "$OUTPUT" | sed -n 's/^STATUS:://p' | tail -n1)
+        echo "++++ Debug Output ++++"
 
-        {
-          echo "blog_post<<EOF"
-          printf "%s\n" "$BLOG_POST"
-          echo "EOF"
-          echo "status=$STATUS"
-        } >> "$GITHUB_OUTPUT"
+        echo 'blog_post<<EOF' >> $GITHUB_OUTPUT
+        printf "%s\n" "$BLOG_POST" >> $GITHUB_OUTPUT
+        echo 'EOF' >> $GITHUB_OUTPUT
