@@ -1,0 +1,4 @@
+site_name: Release Bot Docs
+site_url: https://octo-pie-admin.github.io/release-bot/
+theme:
+  name: material

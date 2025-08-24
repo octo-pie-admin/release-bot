@@ -32,8 +32,7 @@ inputs:
 outputs:
   blog_post:
     description: "Generated markdown blog post"
-  status:
-    description: "Pipeline status (success or error)"
+    value: ${{ steps.generate.outputs.blog_post }}
 
 runs:
   using: "composite"
@@ -50,7 +49,7 @@ runs:
         pip install -r ${{ github.action_path }}/requirements.txt
 
     - name: Run AI-Release-Bot
-      id: run
+      id: generate
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
@@ -61,18 +60,14 @@ runs:
         GITHUB_REPOSITORY: ${{ github.repository }}
         OUTPUT_FORMAT: ${{ inputs.output_format }}
       run: |
-        OUTPUT=$(python ${{ github.action_path }}/main.py)
+        B64=$(python "${{ github.action_path }}/main.py" | sed -n 's/^BLOG_POST_B64:://p' | tail -n1)
 
-        # Decode Base64 blog post
-        B64=$(printf "%s\n" "$OUTPUT" | sed -n 's/^BLOG_POST_B64:://p' | tail -n1)
-        BLOG_POST=$(printf "%s" "$B64" | base64 -d)
+        echo "++++ Debug Output v5 ++++"
 
-        STATUS=$(printf "%s\n" "$OUTPUT" | sed -n 's/^STATUS:://p' | tail -n1)
-
-        # Use unquoted heredoc; escape special chars with quotes inside if needed
+        DELIM=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
         {
-          echo "blog_post<<EOF"
-          printf "%s\n" "$BLOG_POST"
-          echo "EOF"
-          echo "status=$STATUS"
+          echo "blog_post<<$DELIM"
+          printf "%s" "$B64"
+          echo
+          echo "$DELIM"
         } >> "$GITHUB_OUTPUT"
