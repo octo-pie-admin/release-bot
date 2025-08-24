@@ -49,7 +49,7 @@ runs:
         pip install -r ${{ github.action_path }}/requirements.txt
 
     - name: Run AI-Release-Bot
-      id: run
+      id: generate
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
